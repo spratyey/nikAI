@@ -25,6 +25,7 @@ export default {
     return {
       userMessage: '',
       chatHistory: [],
+      catImage: null, // Holds the fetched cat image URL
     };
   },
   methods: {
@@ -48,6 +49,20 @@ export default {
         this.userMessage = '';
       }
     },
+
+    async fetchCatImage() {
+      try {
+        const response = await fetch('http://localhost:3000/api/random-cat');
+        const data = await response.json();
+        if (data.imageUrl) {
+          this.catImage = data.imageUrl;
+        } else {
+          console.error("No image received.");
+        }
+      } catch (error) {
+        console.error("Error fetching cat image:", error);
+      }
+    },
   },
 };
 </script>
@@ -68,6 +83,16 @@ export default {
         @keyup.enter="sendMessage"
       />
       <button @click="sendMessage">Send</button>
+    </div>
+  </div>
+
+  <div>
+    <button @click="fetchCatImage">Get Random Cat</button>
+    <div v-if="catImage">
+      <img :src="catImage" alt="Random Cat" />
+    </div>
+    <div v-else>
+      <p>No cat image yet. Press the button!</p>
     </div>
   </div>
 

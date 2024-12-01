@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const OpenAI =require("openai");
+const fetch = require('node-fetch');
 require('dotenv').config();
 
 const openai = new OpenAI({
@@ -22,7 +23,7 @@ app.get('/api/hello', (req, res) => {
 app.post('/api/chat', async (req, res) => {
   const userMessage = req.body.message;
   // const userMessage = "Hi, what company do I work for?"
-  console.log(userMessage);
+  // console.log(userMessage);
 
   try {
     // Step 3: Add user message to the thread
@@ -52,6 +53,29 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+
+
+app.get('/api/random-cat', async (req, res) => {
+  try {
+      const response = await fetch('https://api.thecatapi.com/v1/images/search?limit=1&has_breeds=1', {
+          headers: {
+              "content-type": "application/json",
+              "x-api-key": process.env.CAT_API_KEY // Replace with your Cat API key in .env
+          }
+      });
+      // console.log(response)
+      const data = await response.json();
+      if (data && data[0]) {
+          res.json({ imageUrl: data[0].url });
+      } else {
+          res.status(404).json({ message: "No cat image found." });
+      }
+  } catch (error) {
+      console.log(response)
+      console.error("Error fetching cat image:", error);
+      res.status(500).json({ message: "Failed to fetch cat image." });
+  }
+});
 
 
 
