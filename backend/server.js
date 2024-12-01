@@ -19,6 +19,28 @@ app.get('/api/hello', (req, res) => {
   res.send('Hello from the backend!');
 });
 
+// Endpoint to terminate the current run
+app.post('/api/terminate-run', async (req, res) => {
+  try {
+    // List all runs
+    const runs = await openai.beta.threads.runs.list(THREAD_ID);
+
+    if (runs.data.length === 0) {
+      return res.status(404).json({ error: 'No runs found.' });
+    }
+
+    // Get the current run ID (the first one in the list)
+    const currentRunId = runs.data[0].id;
+
+    // Terminate the current run
+    const terminatedRun = await openai.beta.threads.runs.cancel(THREAD_ID, currentRunId);
+
+    res.json({ message: 'Run terminated successfully.', run: terminatedRun });
+  } catch (error) {
+    console.error('Error terminating run:', error.message);
+    res.status(500).json({ error: 'Failed to terminate the run.' });
+  }
+});
 
 // Function to handle required actions during FUNCTIONCALLING
 const handleRequiresAction = async (run) => {
@@ -30,10 +52,12 @@ const handleRequiresAction = async (run) => {
     const toolOutputs = await Promise.all(
       run.required_action.submit_tool_outputs.tool_calls.map(async (tool) => {
         console.log(tool.function.name+"is being invoked");
-        console.log("oracle: "+JSON.parse(tool.function.arguments).limit);
+        const funcargs=JSON.parse(tool.function.arguments);
+        console.log("oracle: "+funcargs.limit+funcargs.breedNames);
         if (tool.function.name === "fetchRandomCatImages") {
-          const limit = JSON.parse(tool.function.arguments).limit ? JSON.parse(tool.function.arguments).limit : 1;
-          const images = await fetchRandomCatImages(limit);
+          const limit = funcargs.limit ? funcargs.limit : 1;
+          const breedNames=funcargs.breedNames ? funcargs.breedNames : "";
+          const images = await fetchRandomCatImages(limit, breedNames);
           return {
             tool_call_id: tool.id,
             output: images, // Pass the concatenated string of image URLs
@@ -86,7 +110,7 @@ app.post('/api/chat', async (req, res) => {
     // Create and poll a run
     let run = await openai.beta.threads.runs.createAndPoll(THREAD_ID, {
       assistant_id: ASSISTANT_ID,
-      instructions: 'You can call fetchRandomCatImages(limit) to fetch cat images.',
+      instructions: 'You can call fetchRandomCatImages(limit, breedNames) to fetch cat images.',
     });
 
     // Handle run status
@@ -100,17 +124,49 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+const fs = require('fs');
+const path = require('path');
 
+// Function to find the breed IDs by names
+function findBreedIdsByNames(breedNames) {
+  const filePath = path.join(__dirname, 'breeds.json');
+  const data = fs.readFileSync(filePath, 'utf8');
+  const breeds = JSON.parse(data);
+
+  const breedIds = breedNames.map(breedName => {
+    const breed = breeds.find(b => b.name.toLowerCase() === breedName.toLowerCase());
+    return breed ? breed.id : null;
+  }).filter(id => id !== null);
+
+  return breedIds;
+}
 
 // Reusable function to fetch random cat images
-async function fetchRandomCatImages(limit = 1) {
+async function fetchRandomCatImages(limit = 1, breedNames = '') {
+    
     try {
-    const response = await fetch(`https://api.thecatapi.com/v1/images/search?limit=${limit}&has_breeds=1`, {
+      let myurl=`https://api.thecatapi.com/v1/images/search?limit=${limit}&has_breeds=1`;
+      let breedIds = [];
+      if (breedNames) {
+      const breedNamesArray = breedNames.split(',').map(name => name.trim());
+      breedIds = findBreedIdsByNames(breedNamesArray);
+      if (breedIds.length === 0) {
+        myurl= `https://api.thecatapi.com/v1/images/search?limit=${limit}&has_breeds=1`
+      }
+      else {
+        const breedIdsParam = breedIds.join(',');
+        myurl= `https://api.thecatapi.com/v1/images/search?limit=${limit}&has_breeds=1&breed_ids=${breedIdsParam}`
+      }
+    }
+
+    
+    const response = await fetch(myurl, {
       headers: {
         "content-type": "application/json",
-        "x-api-key": process.env.CAT_API_KEY, // Replace with your Cat API key in .env
+        "x-api-key": process.env.CAT_API_KEY,
       },
     });
+
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
@@ -119,8 +175,17 @@ async function fetchRandomCatImages(limit = 1) {
     const data = await response.json();
 
     if (data && data.length > 0) {
-      console.log(`CAT_IMAGES:${data.map(img => img.url).join(',')}`);
-      return `CAT_IMAGES:${data.map(img => img.url).join(',')}`;
+      let retval=`CAT_IMAGE_URLS:${data.map(img => img.url).join(',')}`;
+      if(breedNames){
+        if (breedIds.length===0){
+          retval="NO SPECIFIED BREEDS FOUND. SHOWING RANDOM CATS."+retval;
+        }
+        else{
+          retval="ONE OR MORE BREEDS FOUND."+retval;
+        }
+      }
+      return retval;
+      
     } else {
       throw new Error("No cat images found.");
     }
@@ -130,20 +195,7 @@ async function fetchRandomCatImages(limit = 1) {
   }
 }
 
-// Endpoint using the reusable function
-app.get('/api/random-cat', async (req, res) => {
-  const limit = parseInt(req.query.limit) || 1; // Default to 1 if no limit is provided
-  if (limit < 1 || limit > 10) {
-    return res.status(400).json({ error: 'Limit must be between 1 and 10.' });
-  }
 
-  try {
-    const catImages = await fetchRandomCatImages(limit);
-    res.json(catImages); // Send the response as JSON
-  } catch (error) {
-    res.status(500).json({ message: "Failed to fetch cat images." });
-  }
-});
 
 
 

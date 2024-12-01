@@ -13,7 +13,7 @@ client = OpenAI(api_key=api_key)
 
 run = client.beta.threads.runs.cancel(
   thread_id="thread_viWZxNTuGAt5421glYi8rArj",
-  run_id="run_vymTmSHpr4rEXqTw7qLHKyjh"
+  run_id="run_4MPl1lxBrxoVDpm3cjIAWniz"
 )
 
 print(run)

@@ -36,12 +36,21 @@ export default {
       } catch (error) {
         console.error('Error:', error.message);
         this.chatHistory.push({ role: 'assistant', content: 'Oops, something went wrong!' });
+        await this.terminateRun();
       } finally {
         this.userMessage = '';
       }
     },
-
+    async terminateRun() {
+      try {
+        const response = await axios.post('http://localhost:3000/api/terminate-run');
+        console.log('Run terminated:', response.data);
+      } catch (error) {
+        console.error('Error terminating run:', error.message);
+      }
+    },
   },
+  
 };
 </script>
 

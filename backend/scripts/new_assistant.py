@@ -18,22 +18,51 @@ client = OpenAI(api_key=api_key)
 #     model="gpt-4o-mini",
 # )
 
-assistant2 = client.beta.assistants.create(
+# assistant2 = client.beta.assistants.create(
+#   instructions="You are a personal assistant to the hardworking developers at a Geospatial AI startup, Nika.eco. You are to help the developers normally. But, if the user asks for a picture(s) of cats, use your function calling ability to return urls of cat pictures. Otherwise, work normally as an assistant.",
+#   model="gpt-4o-mini",
+#   name="NikAI_v2",
+#   tools=[
+#     {
+#       "type": "function",
+#       "function": {
+#         "name": "fetchRandomCatImages",
+#         "description": "Internally the CatAPI from CatAPI.com to fetch a specified number of random cat pictures.",
+#         "parameters": {
+#           "type": "object",
+#           "properties": {
+#             "limit": {
+#               "type": "integer",
+#               "description": "The cnumber of cat pictures to be fetched."
+#             }
+#           },
+#           "required": ["limit"]
+#         }
+#       }
+#     }
+#   ]
+# )
+
+assistant3 = client.beta.assistants.create(
   instructions="You are a personal assistant to the hardworking developers at a Geospatial AI startup, Nika.eco. You are to help the developers normally. But, if the user asks for a picture(s) of cats, use your function calling ability to return urls of cat pictures. Otherwise, work normally as an assistant.",
   model="gpt-4o-mini",
-  name="NikAI_v2",
+  name="NikAI_v3",
   tools=[
     {
       "type": "function",
       "function": {
         "name": "fetchRandomCatImages",
-        "description": "Internally the CatAPI from CatAPI.com to fetch a specified number of random cat pictures.",
+        "description": "Internally calls the CatAPI from CatAPI.com to fetch a specified number of random cat picture URLs. If breeds are specified, it tries to look for pictures of cats of those specific breeds. If these are not found / if breeds are not specified, random cat picture URLs are returned,",
         "parameters": {
           "type": "object",
           "properties": {
             "limit": {
               "type": "integer",
-              "description": "The cnumber of cat pictures to be fetched."
+              "description": "The number of cat pictures to be fetched."
+            },
+            "breedNames":{
+                "type":"string",
+                "description":"A comma separated string of one or more breeds that the user may specify they want pictures of. Can be left empty."
             }
           },
           "required": ["limit"]
@@ -42,5 +71,5 @@ assistant2 = client.beta.assistants.create(
     }
   ]
 )
-print(assistant2)
+print(assistant3)
 
