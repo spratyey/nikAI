@@ -25,7 +25,7 @@ export default {
     return {
       userMessage: '',
       chatHistory: [],
-      catImage: null, // Holds the fetched cat image URL
+      catImages: [], // Holds the fetched cat image URL
     };
   },
   methods: {
@@ -50,17 +50,18 @@ export default {
       }
     },
 
-    async fetchCatImage() {
+    async fetchCatImages() {
+      const limit = 5; // Number of cat images to fetch
       try {
-        const response = await fetch('http://localhost:3000/api/random-cat');
+        const response = await fetch(`http://localhost:3000/api/random-cat?limit=${limit}`);
         const data = await response.json();
-        if (data.imageUrl) {
-          this.catImage = data.imageUrl;
+        if (data.images) {
+          this.catImages = data.images;
         } else {
-          console.error("No image received.");
+          console.error("No images received.");
         }
       } catch (error) {
-        console.error("Error fetching cat image:", error);
+        console.error("Error fetching cat images:", error);
       }
     },
   },
@@ -87,12 +88,14 @@ export default {
   </div>
 
   <div>
-    <button @click="fetchCatImage">Get Random Cat</button>
-    <div v-if="catImage">
-      <img :src="catImage" alt="Random Cat" />
+    <button @click="fetchCatImages">Get Random Cats</button>
+    <div v-if="catImages.length">
+      <div v-for="(image, index) in catImages" :key="index">
+        <img :src="image" alt="Random Cat" />
+      </div>
     </div>
     <div v-else>
-      <p>No cat image yet. Press the button!</p>
+      <p>No cat images yet. Press the button!</p>
     </div>
   </div>
 
