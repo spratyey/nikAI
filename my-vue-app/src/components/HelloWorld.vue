@@ -25,7 +25,7 @@ export default {
     return {
       userMessage: '',
       chatHistory: [],
-      catImages: [], // Holds the fetched cat image URL
+      catImages: [], // Holds the fetched cat image URLs
     };
   },
   methods: {
@@ -40,8 +40,14 @@ export default {
           message: this.userMessage,
         });
 
-        // Add bot response to chat history
-        this.chatHistory.push({ role: 'assistant', content: response.data.response });
+        // Check if the bot's response includes cat images
+        const botResponse = response.data.response;
+        console.log(botResponse);
+        // if (botResponse.startsWith('CAT_IMAGES:')) {
+        //   this.catImages = botResponse.content.replace('CAT_IMAGES:', '').split(',');
+        // }
+        this.chatHistory.push({ role: 'assistant', content: botResponse[0].text.value });
+        
       } catch (error) {
         console.error('Error:', error.message);
         this.chatHistory.push({ role: 'assistant', content: 'Oops, something went wrong!' });
@@ -69,7 +75,6 @@ export default {
 </script>
 
 <template>
-  
   <div class="chat-container">
     <h1>Cat Chatbot</h1>
     <div class="chat-window">
@@ -87,39 +92,35 @@ export default {
     </div>
   </div>
 
-  <div>
+  <div class="cat-images-section">
+    <h2>Cat Images</h2>
     <button @click="fetchCatImages">Get Random Cats</button>
     <div v-if="catImages.length">
-      <div v-for="(image, index) in catImages" :key="index">
+      <div v-for="(image, index) in catImages" :key="index" class="cat-image">
         <img :src="image" alt="Random Cat" />
       </div>
     </div>
     <div v-else>
-      <p>No cat images yet. Press the button!</p>
+      <p>No cat images yet. Press the button or chat with the bot!</p>
     </div>
   </div>
-
-
 </template>
 
 <style scoped>
 .chat-container {
   max-width: 600px;
-  margin: auto;
-  font-family: Arial, sans-serif;
-  text-align: center;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
 }
 
 .chat-window {
-  height: 400px;
-  overflow-y: scroll;
+  height: 300px;
+  overflow-y: auto;
+  margin-bottom: 10px;
   border: 1px solid #ddd;
   padding: 10px;
-  margin-bottom: 10px;
-}
-
-.message {
-  margin: 5px 0;
 }
 
 .input-area {
@@ -127,21 +128,19 @@ export default {
   gap: 10px;
 }
 
-input {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #ddd;
+.cat-images-section {
+  margin-top: 20px;
 }
 
-button {
-  padding: 10px;
-  background-color: #007BFF;
-  color: white;
-  border: none;
-  cursor: pointer;
+.cat-image {
+  margin-bottom: 10px;
 }
 
-button:hover {
-  background-color: #0056b3;
+.cat-image img {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  border-radius: 10px;
 }
 </style>
+

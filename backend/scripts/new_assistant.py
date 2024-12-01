@@ -11,10 +11,36 @@ api_key = os.getenv('OPENAI_API_KEY')
 # Initialize the OpenAI client with the API key
 client = OpenAI(api_key=api_key)
 
-my_assistant = client.beta.assistants.create(
-    instructions="You are a personal assistant to the hardworking developers at a Geospatial AI startup, Nika.eco. You are to help the developers normally. But, if the user asks for a picture of a cat, return only YAY CAT and nothing else. Otherwise, work normally as an assistant.",
-    name="NikAI v1",
-    tools=[],
-    model="gpt-4o-mini",
+# my_assistant = client.beta.assistants.create(
+#     instructions="You are a personal assistant to the hardworking developers at a Geospatial AI startup, Nika.eco. You are to help the developers normally. But, if the user asks for a picture of a cat, return only YAY CAT and nothing else. Otherwise, work normally as an assistant.",
+#     name="NikAI v1",
+#     tools=[],
+#     model="gpt-4o-mini",
+# )
+
+assistant2 = client.beta.assistants.create(
+  instructions="You are a personal assistant to the hardworking developers at a Geospatial AI startup, Nika.eco. You are to help the developers normally. But, if the user asks for a picture(s) of cats, use your function calling ability to return urls of cat pictures. Otherwise, work normally as an assistant.",
+  model="gpt-4o-mini",
+  name="NikAI_v2",
+  tools=[
+    {
+      "type": "function",
+      "function": {
+        "name": "fetchRandomCatImages",
+        "description": "Internally the CatAPI from CatAPI.com to fetch a specified number of random cat pictures.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "description": "The cnumber of cat pictures to be fetched."
+            }
+          },
+          "required": ["limit"]
+        }
+      }
+    }
+  ]
 )
-print(my_assistant)
+print(assistant2)
+

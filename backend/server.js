@@ -20,36 +20,83 @@ app.get('/api/hello', (req, res) => {
 });
 
 
+// Function to handle required actions during FUNCTIONCALLING
+const handleRequiresAction = async (run) => {
+  if (
+    run.required_action &&
+    run.required_action.submit_tool_outputs &&
+    run.required_action.submit_tool_outputs.tool_calls
+  ) {
+    const toolOutputs = await Promise.all(
+      run.required_action.submit_tool_outputs.tool_calls.map(async (tool) => {
+        console.log(tool.function.name+"is being invoked");
+        console.log("oracle: "+JSON.parse(tool.function.arguments).limit);
+        if (tool.function.name === "fetchRandomCatImages") {
+          const limit = JSON.parse(tool.function.arguments).limit ? JSON.parse(tool.function.arguments).limit : 1;
+          const images = await fetchRandomCatImages(limit);
+          return {
+            tool_call_id: tool.id,
+            output: images, // Pass the concatenated string of image URLs
+          };
+        }
+        
+      })
+    );
+
+    // Submit tool outputs
+    if (toolOutputs.length > 0) {
+      run = await openai.beta.threads.runs.submitToolOutputsAndPoll(
+        THREAD_ID,
+        run.id,
+        { tool_outputs: toolOutputs },
+      );
+      console.log("Tool outputs submitted successfully.");
+    } else {
+      console.log("No tool outputs to submit.");
+    }
+
+    // Handle the updated run status
+    return handleRunStatus(run);
+  }
+};
+
+// Function to handle run status
+const handleRunStatus = async (run) => {
+  if (run.status === "completed") {
+    const messages = await openai.beta.threads.messages.list(THREAD_ID);
+    return messages.data;
+  } else if (run.status === "requires_action") {
+    return await handleRequiresAction(run);
+  } else {
+    console.error("Run did not complete:", run);
+  }
+};
+
+// Endpoint to process chat and allow FUNCTIONCALLING
 app.post('/api/chat', async (req, res) => {
   const userMessage = req.body.message;
-  // const userMessage = "Hi, what company do I work for?"
-  // console.log(userMessage);
 
   try {
-    // Step 3: Add user message to the thread
+    // Add user message to the thread
     await openai.beta.threads.messages.create(THREAD_ID, {
       role: 'user',
       content: userMessage,
     });
 
-    // Step 4: Create and poll a run
-    const run = await openai.beta.threads.runs.createAndPoll(THREAD_ID, {
+    // Create and poll a run
+    let run = await openai.beta.threads.runs.createAndPoll(THREAD_ID, {
       assistant_id: ASSISTANT_ID,
-      instructions: 'Please address the user as a fellow cat enthusiast!',
+      instructions: 'You can call fetchRandomCatImages(limit) to fetch cat images.',
     });
 
-    // Step 5: Retrieve the assistant's response messages
-    if (run.status === 'completed') {
-      const messages = await openai.beta.threads.messages.list(THREAD_ID);
-      const assistantMessage = messages.data
-        .find((msg) => msg.role === 'assistant');
-      return res.json({ response: assistantMessage.content[0].text.value });
-    } else {
-      return res.status(500).json({ error: 'Run did not complete successfully.' });
-    }
+    // Handle run status
+    const messages = await handleRunStatus(run);
+    const assistantMessage = messages.find((msg) => msg.role === 'assistant');
+    res.json({ response: assistantMessage.content });
+    console.log(assistantMessage.content);
   } catch (error) {
     console.error('Error:', error.message);
-    return res.status(500).json({ error: 'Failed to process the request.' });
+    res.status(500).json({ error: 'Failed to process the request.' });
   }
 });
 
@@ -72,7 +119,8 @@ async function fetchRandomCatImages(limit = 1) {
     const data = await response.json();
 
     if (data && data.length > 0) {
-      return { images: data.map(img => img.url) };
+      console.log(`CAT_IMAGES:${data.map(img => img.url).join(',')}`);
+      return `CAT_IMAGES:${data.map(img => img.url).join(',')}`;
     } else {
       throw new Error("No cat images found.");
     }
