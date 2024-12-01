@@ -55,25 +55,44 @@ app.post('/api/chat', async (req, res) => {
 
 
 
+// Reusable function to fetch a random cat image
+async function fetchRandomCatImage(show) {
+  if (!show) {
+    return { message: "Show is false, no cat image fetched." };
+  }
+
+  try {
+    const response = await fetch('https://api.thecatapi.com/v1/images/search?limit=1&has_breeds=1', {
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": process.env.CAT_API_KEY, // Replace with your Cat API key in .env
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data && data[0]) {
+      return { imageUrl: data[0].url };
+    } else {
+      throw new Error("No cat image found.");
+    }
+  } catch (error) {
+    console.error("Error fetching cat image:", error.message);
+    throw error; // Re-throw the error to handle it in the caller
+  }
+}
+
+// Endpoint using the reusable function
 app.get('/api/random-cat', async (req, res) => {
   try {
-      const response = await fetch('https://api.thecatapi.com/v1/images/search?limit=1&has_breeds=1', {
-          headers: {
-              "content-type": "application/json",
-              "x-api-key": process.env.CAT_API_KEY // Replace with your Cat API key in .env
-          }
-      });
-      // console.log(response)
-      const data = await response.json();
-      if (data && data[0]) {
-          res.json({ imageUrl: data[0].url });
-      } else {
-          res.status(404).json({ message: "No cat image found." });
-      }
+    const catImage = await fetchRandomCatImage(true);
+    res.json(catImage); // Send the response as JSON
   } catch (error) {
-      console.log(response)
-      console.error("Error fetching cat image:", error);
-      res.status(500).json({ message: "Failed to fetch cat image." });
+    res.status(500).json({ message: "Failed to fetch cat image." });
   }
 });
 
