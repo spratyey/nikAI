@@ -110,7 +110,7 @@ app.post('/api/chat', async (req, res) => {
     // Create and poll a run
     let run = await openai.beta.threads.runs.createAndPoll(THREAD_ID, {
       assistant_id: ASSISTANT_ID,
-      instructions: 'You can call fetchRandomCatImages(limit, breedNames) to fetch cat images.',
+      instructions: 'You can call fetchRandomCatImages(limit, breedNames) to fetch cat images. Even if there are multiple breeds, try to make only one function call by passing all breeds as a comma separated string as instructed.',
     });
 
     // Handle run status

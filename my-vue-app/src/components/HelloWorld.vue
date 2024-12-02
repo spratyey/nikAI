@@ -55,52 +55,94 @@ export default {
 </script>
 
 <template>
-  <div class="chat-container">
-    <h1>Cat Chatbot</h1>
-    <div class="chat-window">
-      <div v-for="(msg, index) in chatHistory" :key="index" class="message">
-        <strong>{{ msg.role === 'user' ? 'You:' : 'Bot:' }}</strong>
-        <Markdown class="marky" :source="msg.content" />
+  <div class="grid home m-0">
+    
+    <div class="col-1 gren"></div>
+    <div class="col-4 flex flex-column gren">
+
+    <div class="top40 fixed w-4">
+      <img src="/nekologo.png" alt="Neko Logo" style="width: 100px;" />  
+      <h1 class="whit">neko.eco</h1>
+      <div class="grid">
+        <div class="col-9 pb-0">
+        <InputText
+          class="w-full"
+          v-model="userMessage"
+          placeholder="Type your message..."
+          @keyup.enter="sendMessage"
+        />
+      </div>
+      <div class="col-2">
+        <Button severity="secondary" @click="sendMessage">↗</Button>
+      </div>
+      <div class="col-1"></div>
+      </div>
       </div>
     </div>
-    <div class="input-area">
-      <input
-        v-model="userMessage"
-        placeholder="Type your message..."
-        @keyup.enter="sendMessage"
-      />
-      <button @click="sendMessage">Send</button>
+
+    <div class="col-1 beig"></div>
+    <div class="col-5 beig">
+      <div v-for="(msg, index) in chatHistory" :key="index">
+        <template v-if="msg.role === 'user'">
+          <Panel class="userpan gren whit mb-3 p-0">
+            <template #header>
+              <p class="whit pb-0 mb-0"><strong>Me</strong></p>
+            </template>
+            <Markdown class="marky p-0 m-0" :source="msg.content" />
+          </Panel>
+        </template>
+        <template v-else>
+          <Panel class="botpan p-0 mb-3" toggleable >
+            <template #header>
+              <p class="pb-0 mb-0"><strong>Neko.eco</strong></p>
+            </template>
+            <Markdown class="marky p-0 m-0" :source="msg.content" />
+          </Panel>
+          <hr class="dashed mb-3">
+        </template>
+      </div>
     </div>
+    <div class="col-1 beig"></div>
+    
   </div>
 
 </template>
 
 <style>
-.chat-container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
+
+body{
+  margin:0 !important;
 }
 
-.chat-window {
-  height: 300px;
-  overflow-y: auto;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  padding: 10px;
+html, body{min-height:100%;}
+body{height:100vh;}
+.p-inputtext{
+  height: 37px;
+}
+.whit{
+  color: #fcffff !important;
+}
+.gren{
+  background-color: #2f7d5f !important;
 }
 
-.input-area {
-  display: flex;
-  gap: 10px;
+.home{
+  height:100%;
+}
+.top40{
+  margin-top: 20em;
+}
 
+.beig{
+  background-color: #edeee9 !important;
+}
+hr.dashed {
+  border-top: 3px dashed #bbb;
 }
 
 .marky img {
   
-  max-width: 100px !important;
+  max-width: 150px !important;
   height: auto !important;
 }
 </style>
